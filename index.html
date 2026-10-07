@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AURA AI - Baca Gambar</title>
+<style>
+body{font-family:sans-serif;background:#0f172a;color:#fff;padding:15px}
+.box{max-width:650px;margin:auto;background:#1e293b;padding:20px;border-radius:12px}
+#chat{height:320px;overflow:auto;border:1px solid #334155;padding:10px;border-radius:8px;background:#0f172a}
+img{max-width:100%;border-radius:8px}
+input,button{padding:10px;margin:5px 0;border-radius:6px;border:none}
+input[type=text]{width:65%} button{background:#fbbf24;font-weight:bold}
+</style>
+</head>
+<body>
+<div class="box">
+<h2>AURA AI</h2>
+<div id="chat"></div>
+<br>
+<input type="text" id="q" placeholder="Tanya apa saja...">
+<button onclick="kirim()">Kirim</button><br>
+<input type="file" id="img" accept="image/*">
+<button onclick="kirimGambar()">Baca Gambar</button>
+<button onclick="hapus()">Hapus Data</button>
+</div>
+<script>
+let chat=document.getElementById('chat');
+chat.innerHTML=localStorage.getItem("aura_chat")||"";
+function simpan(){localStorage.setItem("aura_chat",chat.innerHTML)}
+async function kirim(){
+ let q=document.getElementById('q').value;
+ if(!q)return;
+ chat.innerHTML+="<p><b>Kamu:</b> "+q+"</p>";simpan();
+ let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({q})});
+ let d=await r.json();
+ chat.innerHTML+="<p><b>AI:</b> "+d.jawaban+"</p>";simpan();
+}
+async function kirimGambar(){
+ let file=document.getElementById('img').files[0];
+ if(!file)return alert("Pilih gambar dulu");
+ let reader=new FileReader();
+ reader.onload=async()=>{
+  let base64=reader.result.split(",")[1];
+  chat.innerHTML+="<p><b>Kamu:</b> [Mengirim gambar]</p><img src='"+reader.result+"'>";
+  let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:base64})});
+  let d=await r.json();
+  chat.innerHTML+="<p><b>AI:</b> "+d.jawaban+"</p>";simpan();
+ };
+ reader.readAsDataURL(file);
+}
+function hapus(){localStorage.removeItem("aura_chat");chat.innerHTML=""}
+</script>
+</body>
+</html>
